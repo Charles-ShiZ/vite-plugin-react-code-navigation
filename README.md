@@ -8,4 +8,4 @@ react 代码导航 vite 插件
    `npm run build` 执行打包
 
 ##  预览效果图
-    ![pin-Interview](https://github.com/Charles-ShiZ/images/blob/master/code-navigation/preview.gif)
+![pin-Interview](https://github.com/Charles-ShiZ/images/blob/master/code-navigation/preview.gif)
