@@ -1,0 +1,30 @@
+{
+  "name": "vite-plugin-react-code-navigation",
+  "version": "1.1.2",
+  "description": "react 代码导航 vite 插件",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.esm.js",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "scripts": {
+    "esbuild:cjs": "esbuild ./src/index.ts --bundle --platform=node --outfile=dist/index.cjs.js --format=cjs",
+    "esbuild:esm": "esbuild ./src/index.ts --bundle --platform=node --outfile=dist/index.esm.js --format=esm",
+    "build": "npm run esbuild:cjs && npm run esbuild:esm",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "vite",
+    "vite-plugin",
+    "react",
+    "react-vite",
+    "code-navigation"
+  ],
+  "author": "shizhanhong",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^18.7.18",
+    "esbuild": "^0.15.8"
+  }
+}
