@@ -1,7 +1,6 @@
 import fs from 'fs'
-export default function viteCodeNavigation ({componentNames = []}:{
-    componentNames:string[]
-}) {
+import { Plugin } from 'vite';
+export default function viteCodeNavigation (componentNames:string[] = []):Plugin {
     return {
       name: "vite-plugin-react-code-navigation",
       apply: "serve",

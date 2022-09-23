@@ -29,7 +29,7 @@ __export(src_exports, {
 });
 module.exports = __toCommonJS(src_exports);
 var import_fs = __toESM(require("fs"));
-function viteCodeNavigation({ componentNames = [] }) {
+function viteCodeNavigation(componentNames = []) {
   return {
     name: "vite-plugin-react-code-navigation",
     apply: "serve",

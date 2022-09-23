@@ -1,6 +1,6 @@
 // src/index.ts
 import fs from "fs";
-function viteCodeNavigation({ componentNames = [] }) {
+function viteCodeNavigation(componentNames = []) {
   return {
     name: "vite-plugin-react-code-navigation",
     apply: "serve",
