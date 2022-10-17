@@ -9,17 +9,19 @@ export default function viteCodeNavigation (componentNames:string[] = []):Plugin
           return code
         }
         if(id.search(/\.[t|j]sx/) > -1){ // 如果是jsx或者tsx
-          const codeContent = fs.readFileSync(id).toString()
-          const codeContentSplit = codeContent.split(/\n/)
-          const matchedPositions:{line:number,char:number}[]= []
+          const codeContent = fs.readFileSync(id).toString() // 获取文件代码
+          const codeContentSplit = codeContent.split(/\n/) // 按行分割代码
+          const matchedPositions:{line:number,char:number}[]= [] // 存放匹配的代码位置
           const compNames = componentNames.map((name,index) =>
-          `(${name})${index + 1 !== componentNames.length ? '|':''}`).join('')
+          `(${name})${index + 1 !== componentNames.length ? '|':''}`).join('') // 为正则表达式拼接字符串
+
           codeContentSplit.forEach((eachLine, line) => {
-            const char = eachLine.search(new RegExp(`<(${compNames})+\\s*`, 'g'))
+            // ?<! 可能不能兼容环境
+            const char = eachLine.search(new RegExp(`(?<!\\/\\*\\s*)<(${compNames})+\\s*`, 'g')) // 匹配所有未被注释的组件开头。如，<Button 
             if(char > -1){
               matchedPositions.push({
-                line: line + 1,
-                char: char + 1
+                line: line + 1,// 字符纵向位置
+                char: char + 1 // 字符横向位置
               })
             }
           })
