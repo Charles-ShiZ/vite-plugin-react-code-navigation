@@ -14,7 +14,7 @@ function viteCodeNavigation(componentNames = []) {
         const matchedPositions = [];
         const compNames = componentNames.map((name, index) => `(${name})${index + 1 !== componentNames.length ? "|" : ""}`).join("");
         codeContentSplit.forEach((eachLine, line) => {
-          const char = eachLine.search(new RegExp(`<(${compNames})+\\s*`, "g"));
+          const char = eachLine.search(new RegExp(`(?<!\\/\\*\\s*)<(${compNames})+\\s*`, "g"));
           if (char > -1) {
             matchedPositions.push({
               line: line + 1,
