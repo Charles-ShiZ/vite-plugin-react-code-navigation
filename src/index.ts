@@ -1,45 +1,69 @@
-import fs from 'fs'
-import { Plugin } from 'vite';
-export default function viteCodeNavigation (componentNames:string[] = []):Plugin {
-    return {
-      name: "vite-plugin-react-code-navigation",
-      apply: "serve",
-      transform(code: string, id:string) {
-        if(!componentNames.length){
-          return code
-        }
-        if(id.search(/\.[t|j]sx/) > -1){ // 如果是jsx或者tsx
-          const codeContent = fs.readFileSync(id).toString() // 获取文件代码
-          const codeContentSplit = codeContent.split(/\n/) // 按行分割代码
-          const matchedPositions:{line:number,char:number}[]= [] // 存放匹配的代码位置
-          const compNames = componentNames.map((name,index) =>
-          `(${name})${index + 1 !== componentNames.length ? '|':''}`).join('') // 为正则表达式拼接字符串
 
-          codeContentSplit.forEach((eachLine, line) => {
-            // ?<! 可能不能兼容环境
-            const char = eachLine.search(new RegExp(`(?<!\\/\\*\\s*)<(${compNames})+\\s*`, 'g')) // 匹配所有未被注释的组件开头。如，<Button 
-            if(char > -1){
-              matchedPositions.push({
-                line: line + 1,// 字符纵向位置
-                char: char + 1 // 字符横向位置
-              })
-            }
-          })
-          let i = 0
-          return code.replace(new RegExp(`\\((${compNames}),\\s*{`, 'g'), (match) => {
-            const { line, char } = matchedPositions[i]
-            const subString = `${match}  
-              onContextMenu: (e) => {
-                if(e.shiftKey){
-                  e.preventDefault();
-                  window.open('vscode://file/${id}:${line}:${char}')
-                }
-              },`
-            i++
-            return subString
-          })
+import generate from '@babel/generator'
+import * as parser from '@babel/parser'
+import { Plugin } from 'vite';
+export default function viteCodeNavigation (options:{
+  triggerEvent:'onContextMenu'|'onClick'
+  triggerKey:'shift'|'ctrl'
+}):Plugin {
+  const { triggerEvent = 'onContextMenu', triggerKey = 'shift' } = options ?? {}
+  const bodyClosingTagRegExp = /<\/body>/
+  const triggerEventCode = `
+    document.${triggerEvent.toLocaleLowerCase()} = function (e) {
+      const getDebugSource = (element) => {
+        const fiberKey = Object.keys(element).find((key) => key.startsWith('__reactFiber') || key.startsWith('__reactInternalInstance')) // __reactInternalInstance: react <= v16.13.1
+        let debugOwner = element[fiberKey]
+        while (debugOwner) {
+          if (debugOwner._debugSource) {
+            const { fileName, columnNumber, lineNumber } = debugOwner._debugSource
+            return { fileName, columnNumber, lineNumber }
+          }
+          debugOwner = debugOwner._debugOwner
         }
-        return code
-      },
-    };
+      }
+      const stackGetDebugSource = (element) => {
+        if(!element) return
+        const debugSource = getDebugSource(element)
+        if(debugSource){
+          return debugSource
+        } else {
+          return stackGetDebugSource(element.parentNode)
+        }
+      }
+      const goToVscode = (filePath, line, column) => {
+        const vscodeFilePath = \`vscode://file/\${filePath}:\${line}:\${column}\`
+        const decodedFilePath = ((string) => {
+          return decodeURI(string.replace(/\\\\u/g, '%u'))
+        })(vscodeFilePath)
+        window.open(decodedFilePath)
+      }
+      if (e[\`${triggerKey}Key\`]) {
+        e.preventDefault()
+        e.stopPropagation()
+        const element = e.target
+        const debugSource = stackGetDebugSource(element)
+        if(debugSource) {
+          const { fileName, columnNumber, lineNumber } = debugSource
+          goToVscode(fileName, lineNumber, columnNumber)
+        }
+      }
+    }
+  `
+  return {
+    name: 'vite-plugin-react-code-navigation',
+    apply: 'serve',
+    enforce: 'pre',
+    transformIndexHtml(html) {
+      const triggerEventAst = parser.parse(triggerEventCode, {
+        sourceType: 'unambiguous',
+      })
+      const { code: triggerEventCleanString } = generate(triggerEventAst, {
+        comments: false, //无注释
+        compact: true, //无空白
+      })
+      return html.replace(bodyClosingTagRegExp, (rootDivHtml) => {
+        return `<script type="text/javascript">${triggerEventCleanString}</script>${rootDivHtml}`
+      })
+    },
+  }
 }
